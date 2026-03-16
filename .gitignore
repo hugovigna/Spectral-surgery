@@ -1,0 +1,32 @@
+# Modèles Keras (trop volumineux pour git, 90-280 MB chacun)
+*.keras
+
+# Fichiers numpy volumineux (eigenvectors, etc.)
+results/deflated_surgery_cifar100/*/eigenvectors.npy
+results/deflated_surgery_cifar100/*/model.keras
+results/spectral_resnet50/spectral_data.npz
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+
+# Claude Code
+.claude/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Article PDF (pas de binaires dans le repo)
+article_hugo_vigna.pdf
+
+# Données MNIST
+mnist.npz
+
+# Anciens résultats de comparaison (avant correction contamination)
+results/comparison/A3_spectral_surgery/
+results/comparison/B1_focal_then_surgery/
+results/comparison/comparison_partial.csv

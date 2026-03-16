@@ -1,0 +1,2 @@
+n_iter,acc_global_0,acc_global_f,std_0,std_f,baseline_avion,baseline_auto,baseline_oiseau,baseline_chat,baseline_cerf,baseline_chien,baseline_grenouille,baseline_cheval,baseline_bateau,baseline_camion,final_avion,final_auto,final_oiseau,final_chat,final_cerf,final_chien,final_grenouille,final_cheval,final_bateau,final_camion
+10,0.8450000286102295,0.8526999950408936,0.08805225721127201,0.05653149564623248,0.888,0.911,0.811,0.662,0.863,0.699,0.886,0.903,0.931,0.896,0.872,0.917,0.818,0.747,0.842,0.766,0.863,0.884,0.912,0.906
