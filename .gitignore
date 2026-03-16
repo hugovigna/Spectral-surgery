@@ -20,9 +20,6 @@ __pycache__/
 # Jupyter checkpoints
 .ipynb_checkpoints/
 
-# Article PDF (pas de binaires dans le repo)
-article_hugo_vigna.pdf
-
 # Données MNIST
 mnist.npz
 
