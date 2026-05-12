@@ -146,6 +146,60 @@ python compare_posthoc_isic2019.py
 python comparison_focal_balanced.py     # FL/CB (Table 11)
 ```
 
+## Utilisation programmatique
+
+La classe `SpectralSurgery` (dans `spectral_surgery.py`) encapsule toute la procédure. Signature :
+
+```python
+import tensorflow as tf
+from spectral_surgery import SpectralSurgery
+
+# 1. Modèle + loss
+model   = tf.keras.models.load_model("resnet50_cifar10.keras", compile=False)
+loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
+
+# 2. Splits (sensitivity / val / test) + mini-batch HVP
+#    - x_sens, y_sens : sert à estimer la matrice de sensibilité S
+#    - x_val,  y_val  : suivi pendant l'optimisation (rollback)
+#    - x_test, y_test : évaluation finale held-out
+#    - x_hvp,  y_hvp  : batch fixe pour Lanczos / HVP
+
+# 3. Config (tous les hyperparams ; voir ss_cifar10.py pour un exemple complet)
+cfg = {
+    "n_hvp_samples"    : 128,
+    "lanczos_m"        : 10,
+    "n_spikes"         : 9,           # = nb_classes - 1 typiquement
+    "n_iter"           : 15,
+    "omega_mode"       : "homogeneous",  # ou "sqrt" / "linear" / "square"
+    "max_degrade_total": 0.06,
+    "max_degrade_iter" : 0.03,
+    "alpha_max_init"   : 0.02,
+    "alpha_min"        : 0.002,
+    "beta_ema"         : 0.7,
+    "rollback_std_tol" : 0.005,
+    "rollback_drop_tol": 0.07,
+    "output_dir"       : "results/cifar10/ss",
+    "save_model"       : True,
+    "model_out"        : "resnet50_cifar10_ss.keras",
+    "seed"             : 0,
+    "class_names"      : [...],
+}
+
+runner = SpectralSurgery(
+    model, loss_fn,
+    x_sens, y_sens,
+    x_val,  y_val,
+    x_test, y_test,
+    x_hvp,  y_hvp,
+    cfg,
+)
+
+# Les kwargs de run() surchargent cfg sans le muter (utile pour des sweeps)
+runner.run(n_iter=15, omega_mode="homogeneous")
+```
+
+Scripts d'exemple complets : `ss_cifar10.py`, `spike_optimizer_isic2019_ce.py`, `deflated_surgery_cifar100.py`.
+
 ## Algorithmes
 
 | Algorithme | Fichier | Référence |
