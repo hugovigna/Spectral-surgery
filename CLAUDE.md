@@ -1,1 +1,0 @@
-Ce dossier représente un travail de plusieurs mois pour un étudiant en thèse en mathématiques pour l'IA. J'ai un profil théorique et je veux aucune sycophancie, n'hésite pas à me contredire s'il le faut, je veux une précision chirurgicale sur tout ce que tu diras. 

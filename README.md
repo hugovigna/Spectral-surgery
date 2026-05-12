@@ -34,7 +34,6 @@ Réduction de σ et amélioration des classes faibles — voir Table 13-14 du pa
 
 ```
 projet_recherche/
-├── article.tex                              # Source LaTeX du papier
 ├── README.md
 │
 ├── spectral_tools.py                        # Lib core : HVP, Lanczos, SLQ
@@ -55,20 +54,17 @@ projet_recherche/
 ├── run_analysis.py                          # Analyse spectrale complète
 ├── run_spectral_density_resnet50.py         # Densité spectrale CIFAR-10
 ├── spectral_density_isic2019.py             # Densité spectrale ISIC
-├── spectral_blocks.py                       # Décomposition par bloc
 ├── compute_sensitivity_matrix.py            # Matrice de sensibilité S
 ├── compute_S_baseline_cifar10.py            # S baseline (avant SS)
 ├── linearization_diagnostic.py              # Diagnostic linéarisation
 ├── test_hvp_batch_ablation.py               # Robustesse HVP (Tables 3-5)
 ├── comparison_focal_balanced.py             # FL/CB sur CIFAR-10
 ├── compare_posthoc_{cifar10,isic2019}.py    # τ-norm, logit adjustment
-├── tta_bootstrap_eval.py                    # TTA + bootstrap IC 95% (ISIC)
 ├── eval_baseline_spiked_test.py             # Évaluation sur test held-out
 │
 ├── plot_spectral_resnet50.py                # Figure 1 (densité)
 ├── plot_linearization.py                    # Figures linéarisation
 ├── plot_deflated_results.py                 # Figure CIFAR-100
-├── plot_ss_comparison.py                    # Bar plot acc par classe avant/après SS
 │
 ├── download_isic2019.py                     # Téléchargement dataset ISIC
 ├── resplit_isic2019.py                      # Re-split train/val/test ISIC
@@ -78,8 +74,8 @@ projet_recherche/
 └── results/
     ├── cifar10/         {ss, fl_ss, focal_loss, classic_ft, bulk_finetune, ablation_omega, ...}
     ├── cifar100/        {deflated_surgery}
-    ├── isic2019/        {ss, ce_ss, fl_ss, cb_ss, focal_loss, class_balanced, ablation_omega, tta_bootstrap, spectral_density}
-    └── spectral/        {density_cifar10, sensitivity_matrix, linearization, hvp_ablation, directed_walk, blocks}
+    ├── isic2019/        {ss, ce_ss, fl_ss, cb_ss, focal_loss, class_balanced, ablation_omega, spectral_density}
+    └── spectral/        {density_cifar10, sensitivity_matrix, linearization, hvp_ablation, directed_walk}
 ```
 
 ## Modèles (.keras)
