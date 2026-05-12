@@ -36,8 +36,11 @@ Réduction de σ et amélioration des classes faibles — voir Table 13-14 du pa
 projet_recherche/
 ├── README.md
 │
-├── spectral_tools.py                        # Lib core : HVP, Lanczos, SLQ
-├── spike_optimizer.py                       # Lib SS (utilisée par les variantes)
+├── spectral_tools.py                        # Lib bas niveau : HVP (Pearlmutter), Lanczos, SLQ
+├── spectral_surgery.py                      # Classe canonique `SpectralSurgery` (CIFAR-10, ablations)
+├── isic_ss.py                               # Variante ISIC partagée (CE / FL / CB)
+├── spike_optimizer.py                       # SS legacy CIFAR-10 (utilisée par comparison_focal_balanced, linearization_diagnostic)
+├── spike_optimizer_cifar100.py              # SS spécialisée CIFAR-100 (utilisée par deflated_surgery)
 │
 ├── train_*.py                               # Entraînement des baselines
 ├── focal_loss_*.py                          # Fine-tuning Focal Loss
@@ -98,8 +101,10 @@ projet_recherche/
 
 ### Prérequis
 ```bash
-pip install tensorflow keras numpy pandas scipy matplotlib scikit-learn
+pip install -r requirements.txt   # versions exactes du papier
 ```
+Python 3.12. Testé sur macOS Metal (M4) ; CPU et CUDA Linux fonctionnent
+sans modification (Keras 3 backend TF gère le placement automatiquement).
 
 ### Datasets
 - **CIFAR-10/100** : téléchargé automatiquement via `keras.datasets`
@@ -207,7 +212,8 @@ Scripts d'exemple complets : `ss_cifar10.py`, `spike_optimizer_isic2019_ce.py`, 
 | Hessian-Vector Product (Pearlmutter) | `spectral_tools.py` | Pearlmutter (1994) |
 | Lanczos avec ré-orthogonalisation | `spectral_tools.py` | Ghorbani et al. (2019) |
 | Stochastic Lanczos Quadrature (SLQ) | `spectral_tools.py` | Ghorbani et al. (2019) |
-| Spectral Surgery | `spike_optimizer.py` | Ce papier (Algo. 2) |
+| Spectral Surgery (CIFAR-10) | `spectral_surgery.py` | Ce papier (Algo. 2) |
+| Spectral Surgery (ISIC-2019) | `isic_ss.py` | Ce papier (Algo. 2, variante déséquilibrée) |
 | Deflated Surgery | `deflated_surgery_cifar100.py` | Ce papier (Algo. 3) |
 | Bulk-projected fine-tuning | `bulk_finetune.py` | Ce papier |
 
