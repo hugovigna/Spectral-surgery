@@ -203,9 +203,15 @@ class SpikeOptimizerISIC:
 
         adam_m, adam_v, adam_t = 0.0, 0.0, 0
         if beta_adaptive:
-            n_it = max(int(cfg["n_iter"]), 2)
-            β1_a = 1.0 - 4.0 / n_it
-            β2_a = 1.0 - 1.0 / n_it
+            # β1 = 1 - 4/n_iter, β2 = 1 - 1/n_iter. Requires n_iter ≥ 5
+            # to keep β1 ≥ 0.2 (and avoid β1^t = 1 in bias-correction).
+            if cfg["n_iter"] < 5:
+                raise ValueError(
+                    f"beta_adaptive=True requires n_iter ≥ 5, got {cfg['n_iter']}. "
+                    "Either disable beta_adaptive or raise n_iter."
+                )
+            β1_a = 1.0 - 4.0 / cfg["n_iter"]
+            β2_a = 1.0 - 1.0 / cfg["n_iter"]
         else:
             β1_a, β2_a = 0.9, 0.999
         ε_a = 1e-8
