@@ -2,9 +2,9 @@
 *.keras
 
 # Fichiers numpy volumineux (eigenvectors, etc.)
-results/deflated_surgery_cifar100/*/eigenvectors.npy
-results/deflated_surgery_cifar100/*/model.keras
-results/spectral_resnet50/spectral_data.npz
+results/cifar100/deflated_surgery/*/eigenvectors.npy
+results/cifar100/deflated_surgery/*/model.keras
+results/spectral/density_cifar10/spectral_data.npz
 
 # Python
 __pycache__/
@@ -20,10 +20,6 @@ __pycache__/
 # Jupyter checkpoints
 .ipynb_checkpoints/
 
-# Données MNIST
+# Données
+data/
 mnist.npz
-
-# Anciens résultats de comparaison (avant correction contamination)
-results/comparison/A3_spectral_surgery/
-results/comparison/B1_focal_then_surgery/
-results/comparison/comparison_partial.csv

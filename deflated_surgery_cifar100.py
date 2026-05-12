@@ -43,7 +43,7 @@ from spike_optimizer_cifar100 import (
 # CONFIG
 # ════════════════════════════════════════════════════════════════════════════
 
-OUTPUT_DIR = "results/deflated_surgery_cifar100"
+OUTPUT_DIR = "results/cifar100/deflated_surgery"
 
 PHASES = [
     {"name": "phase1", "n_spikes": 15, "lanczos_m": 25, "max_iter": 3, "eps_probe": 0.005},

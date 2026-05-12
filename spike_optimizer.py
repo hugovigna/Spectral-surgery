@@ -37,7 +37,7 @@ from scipy.optimize import minimize as scipy_minimize
 # ════════════════════════════════════════════════════════════════════════════
 CONFIG = {
     # ── Modèle et données ──────────────────────────────────────────────────
-    "model_path"   : "resnet50_cifar10.keras",
+    "model_path"   : "results/cifar10/focal_loss/model_fl.keras",
     "n_hvp_samples": 128,       # images pour le calcul HVP/Lanczos
     "seed"         : 0,
 
@@ -50,21 +50,27 @@ CONFIG = {
 
     # ── Optimisation des coefficients α ───────────────────────────────────
     "alpha_max_init": 0.02,     # amplitude initiale du choc
-    "alpha_min"    : 0.002,     # plancher (pas de choc en dessous)
+    "alpha_min"    : 0.002,     # plancher
+    "omega_p"      : 1.0,       # exposant des poids : 0.5=sqrt, 1=linear, 2=square
 
-    # ── Decay adaptatif de alpha_max (EMA à la Adam) ────────────────────────
-    "decay_factor" : 0.7,       # alpha_max ← alpha_max × decay_factor
-    "beta_ema"     : 0.7,       # lissage exponentiel sur std (0=instantané, 1=tout lisse)
+    # ── Contrôle adaptatif de alpha_max (Adam sur le signal de progression) ─
+    "adam_beta1"   : 0.9,       # momentum du signal moyen
+    "adam_beta2"   : 0.999,     # momentum du signal carré (mémoire longue)
+    "adam_eps"     : 1e-8,
+
+    # ── Rollback ──────────────────────────────────────────────────────────
+    "rollback_std_tol"  : 0.005,   # Δstd absolu max avant rollback
+    "rollback_drop_tol" : 0.07,    # drop max par classe avant rollback
 
     # ── Sauvegarde du modèle post-spike ──────────────────────────────────────
-    "save_model"   : True,      # sauvegarde le modèle modifié pour le bulk FT
-    "model_out"    : "resnet50_cifar10_spiked.keras",
+    "save_model"   : True,
+    "model_out"    : "resnet50_cifar10_fl_ss.keras",
 
     # ── Boucle principale ──────────────────────────────────────────────────
-    "n_iter"       : 10,
+    "n_iter"       : 15,
 
     # ── Sortie ────────────────────────────────────────────────────────────
-    "output_dir"   : "results/spike_optimizer",
+    "output_dir"   : "results/cifar10/fl_ss",
 }
 
 CIFAR10_CLASSES = [
@@ -130,7 +136,7 @@ def compute_sensitivity(model, ritz_vecs, n_spikes, eps_probe, x_test, y_test):
     restore_weights(model, current_w)
     return S
 
-def optimize_alpha(S, acc_current, alpha_max):
+def optimize_alpha(S, acc_current, alpha_max, ritz_vals):
     """
     Trouve α ∈ R^n_spikes qui maximise l'amélioration pondérée par classe.
 
@@ -140,19 +146,20 @@ def optimize_alpha(S, acc_current, alpha_max):
     → redistribue automatiquement la pression au fil des itérations.
 
     Contraintes :
-      ‖α‖ ≤ alpha_max          : régime perturbatif linéaire
-      Δacc_prédit ≥ -1%        : ne pas dégrader les classes fortes (>85%)
+      |α_i| ≤ alpha_max * sqrt(λ_min / λ_i)  : budget par spike
+        (coût quadratique ≈ constant α_i² λ_i ≤ alpha_max² λ_min)
+      Δacc_prédit ≥ -1%  : ne pas dégrader les classes fortes (>85%)
     """
     acc_best = acc_current.max()
     acc_min  = acc_current.min()
     weights  = (acc_best - acc_current) / max(acc_best - acc_min, 1e-12)
     weights /= weights.sum()
 
+    lambda_ref    = float(ritz_vals.min())
+    alpha_budgets = alpha_max * np.sqrt(lambda_ref / ritz_vals)
+
     def objective(alpha):
         return -np.dot(weights, S.T @ alpha)
-
-    def constraint_norm(alpha):
-        return alpha_max - np.linalg.norm(alpha)
 
     def constraint_no_degrade(alpha):
         # Δacc prédit ≥ -0.01 pour les classes fortes (>85%)
@@ -165,10 +172,8 @@ def optimize_alpha(S, acc_current, alpha_max):
     result = scipy_minimize(
         objective, x0=np.zeros(len(S)),
         method='SLSQP',
-        constraints=[
-            {'type': 'ineq', 'fun': constraint_norm},
-            {'type': 'ineq', 'fun': constraint_no_degrade},
-        ],
+        constraints=[{'type': 'ineq', 'fun': constraint_no_degrade}],
+        bounds=[(-b, b) for b in alpha_budgets],
     )
     return result.x
 
@@ -201,9 +206,18 @@ class SpikeOptimizer:
 
     def run(self):
         cfg = self.cfg
-        alpha_max    = cfg["alpha_max_init"]
-        beta         = cfg["beta_ema"]
-        log          = []
+        alpha_max = cfg["alpha_max_init"]
+        log       = []
+
+        # EMA windows scaled to n_iter: τ1 = n_iter/4 (mean, reactive),
+        # τ2 = n_iter (variance, full-horizon). Override via explicit
+        # adam_beta1/adam_beta2 in cfg if needed.
+        n_it = max(int(cfg["n_iter"]), 2)
+        β1 = cfg.get("adam_beta1_override", 1.0 - 4.0 / n_it)
+        β2 = cfg.get("adam_beta2_override", 1.0 - 1.0 / n_it)
+        ε  = cfg["adam_eps"]
+        adam_m, adam_v, adam_t = 0.0, 0.0, 0
+        best_std = None
 
         # Baseline (mesuré sur le set de sensibilité — le set d'éval est réservé à la fin)
         acc_baseline = per_class_accuracy(self.model, self.x_sens, self.y_sens)
@@ -212,15 +226,13 @@ class SpikeOptimizer:
         self._print_baseline(acc_baseline, acc_global_0)
 
         acc_current = acc_baseline.copy()
-
-        # ── EMA sur la std (à la Adam — lisse le signal pour le decay) ────
-        std_ema      = float(np.std(acc_baseline))
-        best_std_ema = std_ema
+        best_std    = float(np.std(acc_baseline))
+        lin_errors  = []   # historique des écarts de linéarisation
 
         print(f"\n{'='*72}")
         print(f"  ITÉRATIONS — {cfg['n_iter']} chocs  "
-              f"α_init={alpha_max}  decay={cfg['decay_factor']}  "
-              f"β_ema={beta}")
+              f"α∈[{cfg['alpha_min']}, {cfg['alpha_max_init']}]  "
+              f"Adam β1={β1} β2={β2}")
         print(f"{'='*72}")
 
         for it in range(1, cfg["n_iter"] + 1):
@@ -242,7 +254,7 @@ class SpikeOptimizer:
             )
 
             # Optimiser α
-            alpha = optimize_alpha(S, acc_current, alpha_max)
+            alpha = optimize_alpha(S, acc_current, alpha_max, ritz_vals[:n_sp])
 
             # Sauvegarder poids avant choc (pour rollback éventuel)
             weights_before = save_weights(self.model)
@@ -261,42 +273,61 @@ class SpikeOptimizer:
             delta_acc  = acc_new - acc_current
             cur_std    = float(np.std(acc_new))
 
-            # ── Rollback si dégradation forte (+0.5% de std absolu) ───────────
-            rolled_back = False
-            if cur_std > std_before + 0.005:
+            # ── Écart de linéarisation (diagnostic) ──────────────────────────
+            predicted_delta = S.T @ alpha          # ce que le modèle linéaire prédit
+            observed_delta  = delta_acc            # ce qui s'est réellement passé
+            lin_err_abs     = float(np.linalg.norm(predicted_delta - observed_delta))
+            pred_norm       = float(np.linalg.norm(predicted_delta))
+            lin_err_rel     = lin_err_abs / pred_norm if pred_norm > 1e-12 else 0.0
+            lin_errors.append(lin_err_rel)
+            trend = ""
+            if len(lin_errors) >= 2:
+                trend = " ↑" if lin_errors[-1] > lin_errors[-2] else " ↓"
+            print(f"  [LIN] ‖pred−obs‖/‖pred‖ = {lin_err_rel:.3f}{trend}")
+
+            # ── Rollback ──────────────────────────────────────────────────────
+            max_drop    = float(np.max(acc_current - acc_new))
+            rolled_back = (cur_std > std_before + cfg["rollback_std_tol"]
+                           or max_drop > cfg["rollback_drop_tol"])
+            if rolled_back:
                 std_measured = cur_std
                 restore_weights(self.model, weights_before)
-                cur_std   = std_before
-                acc_new   = acc_current.copy()
-                delta_acc = np.zeros_like(acc_current)
+                cur_std    = std_before
+                acc_new    = acc_current.copy()
+                delta_acc  = np.zeros_like(acc_current)
                 acc_global = self.model.evaluate(
                     self.x_sens, self.y_sens, verbose=0, batch_size=256)[1]
-                rolled_back = True
-                print(f"  [ROLLBACK] std {std_before:.4f}→{std_measured:.4f} "
-                      f"(+{(std_measured-std_before)*100:.2f}%) → poids restaurés, "
-                      f"momentum réinitialisé")
+                print(f"  [ROLLBACK] std {std_before:.4f}→{std_measured:.4f}  "
+                      f"max_drop={max_drop*100:.1f}%")
             else:
                 acc_current = acc_new.copy()
 
-            # ── EMA de la std + decay adaptatif ───────────────────────────────
-            std_ema = beta * std_ema + (1.0 - beta) * cur_std
+            # ── Adam sur alpha_max ─────────────────────────────────────────────
             if rolled_back:
-                # Un rollback = on est bloqué → decay immédiat + mise à jour best
-                alpha_max = max(alpha_max * cfg["decay_factor"], cfg["alpha_min"])
-                best_std_ema = std_ema
-                print(f"  [decay] rollback → α_max={alpha_max:.4f}")
-            elif std_ema < best_std_ema - 1e-4:
-                best_std_ema = std_ema
+                g = -max_drop
+            elif cur_std < best_std - 1e-4:
+                g = std_before - cur_std   # amélioration positive
+                best_std = cur_std
             else:
-                alpha_max = max(alpha_max * cfg["decay_factor"], cfg["alpha_min"])
-                print(f"  [decay] std_ema={std_ema:.4f} → α_max={alpha_max:.4f}")
+                g = 0.0
+
+            adam_t += 1
+            adam_m  = β1 * adam_m + (1 - β1) * g
+            adam_v  = β2 * adam_v + (1 - β2) * g ** 2
+            snr     = (adam_m / (1 - β1**adam_t)) / (
+                        np.sqrt(adam_v / (1 - β2**adam_t)) + ε)
+            α_frac  = 0.5 + 0.5 * float(np.tanh(snr * 5.0))
+            alpha_max = float(np.clip(
+                cfg["alpha_min"] + α_frac * (cfg["alpha_max_init"] - cfg["alpha_min"]),
+                cfg["alpha_min"], cfg["alpha_max_init"],
+            ))
+            print(f"  [Adam] SNR={snr:.2f}  α_frac={α_frac:.2f}  α_max={alpha_max:.4f}")
 
             elapsed = time.time() - t0
 
             # ── Affichage toutes classes ──────────────────────────────────────
             rb_tag = " ↩ROLLBACK" if rolled_back else ""
-            print(f"  global={acc_global:.4f}  std={cur_std:.4f}  "
-                  f"ema={std_ema:.4f}  ({elapsed:.0f}s){rb_tag}")
+            print(f"  global={acc_global:.4f}  std={cur_std:.4f}  ({elapsed:.0f}s){rb_tag}")
             header = "  " + "  ".join(f"{n[:4]:>5s}" for n in CIFAR10_CLASSES)
             vals   = "  " + "  ".join(f"{acc_new[c]*100:>5.1f}" for c in range(10))
             delts  = "  " + "  ".join(
@@ -309,11 +340,11 @@ class SpikeOptimizer:
                 "iteration" : it,
                 "acc_global": float(acc_global),
                 "std"       : cur_std,
-                "std_ema"   : std_ema,
                 "alpha_max" : alpha_max,
                 "lambda_max": float(ritz_vals[0]),
                 "alpha_norm": float(np.linalg.norm(alpha)),
                 "rolled_back": rolled_back,
+                "lin_err_rel": lin_err_rel,
                 "elapsed_s" : elapsed,
                 **{CIFAR10_CLASSES[c]: float(acc_new[c])         for c in range(10)},
                 **{f"d_{CIFAR10_CLASSES[c]}": float(delta_acc[c]) for c in range(10)},
@@ -509,8 +540,9 @@ if __name__ == "__main__":
     y_hvp   = y_train[hvp_idx]
 
     print("[2] Chargement du modèle ...")
-    model   = tf.keras.models.load_model(CONFIG["model_path"])
+    model   = tf.keras.models.load_model(CONFIG["model_path"], compile=False)
     loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
+    model.compile(optimizer="adam", loss=loss_fn, metrics=["accuracy"])
     print(f"    Paramètres : "
           f"{sum(np.prod(v.shape) for v in model.trainable_variables):,}")
 

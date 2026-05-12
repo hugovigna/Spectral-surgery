@@ -189,6 +189,6 @@ for row in rows:
 print(f"\n{'='*65}")
 
 # ── Sauvegarde ───────────────────────────────────────────────────────────
-os.makedirs("results/ablation_hvp", exist_ok=True)
-pd.DataFrame(rows).to_csv("results/ablation_hvp/summary.csv", index=False)
-print(f"\n  Sauvegardé dans results/ablation_hvp/summary.csv")
+os.makedirs("results/spectral/hvp_ablation", exist_ok=True)
+pd.DataFrame(rows).to_csv("results/spectral/hvp_ablation/summary.csv", index=False)
+print(f"\n  Sauvegardé dans results/spectral/hvp_ablation/summary.csv")

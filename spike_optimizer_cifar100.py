@@ -60,7 +60,7 @@ CONFIG = {
     "n_iter"       : 10,
 
     # ── Sortie ────────────────────────────────────────────────────────────
-    "output_dir"   : "results/spike_optimizer_cifar100",
+    "output_dir"   : "results/cifar100/spike_optimizer",
 }
 
 # Noms des 100 classes CIFAR-100 (fine labels, ordre officiel)

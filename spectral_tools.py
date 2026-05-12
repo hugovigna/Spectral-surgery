@@ -173,16 +173,15 @@ class HessianVectorProduct:
             # Full-batch : une seule passe, résultat exact
             return self._hvp_batch(self.data_x, self.data_y, v_tensor).numpy()
         else:
-            # Mini-batch : on moyenne les HVPs partiels
-            n_batches   = int(np.ceil(n / self.batch_size))
-            hvp_accum   = tf.zeros(self.n_params, dtype=tf.float32)
+            # Mini-batch séquentiel : @tf.function n'est pas réentrant sur Metal GPU,
+            # les appels parallèles provoqueraient des race conditions.
+            n_batches = int(np.ceil(n / self.batch_size))
+            hvp_accum = tf.zeros(self.n_params, dtype=tf.float32)
             for i in range(n_batches):
-                x_b = self.data_x[i * self.batch_size: (i + 1) * self.batch_size]
-                y_b = self.data_y[i * self.batch_size: (i + 1) * self.batch_size]
+                x_b = self.data_x[i * self.batch_size : (i + 1) * self.batch_size]
+                y_b = self.data_y[i * self.batch_size : (i + 1) * self.batch_size]
                 hvp_accum = hvp_accum + self._hvp_batch(x_b, y_b, v_tensor)
-            # Division par n_batches (pas par n) car chaque _hvp_batch normalise
-            # déjà sa loss par la taille du batch → chaque HVP_batch est déjà
-            # une estimation non-biaisée de H @ v.
+            # Chaque _hvp_batch normalise déjà par la taille du batch → moyenne simple.
             return (hvp_accum / n_batches).numpy()
 
 
@@ -252,21 +251,23 @@ class LanczosAlgorithm:
         Q     : base de Krylov,       shape (n, m_eff)  ou None
         """
         n     = len(v0)
-        alpha = np.zeros(m,     dtype=np.float64)   # diagonale de T
-        beta  = np.zeros(m - 1, dtype=np.float64)   # sous-diagonale de T
+        # float32 pour économiser RAM : Q ∈ R^{n×m} en float64 coûte 2× plus.
+        # Précision suffisante pour m ≤ 20 (reorthogonalisation complète).
+        alpha = np.zeros(m,     dtype=np.float32)   # diagonale de T
+        beta  = np.zeros(m - 1, dtype=np.float32)   # sous-diagonale de T
 
         # Allocation optionnelle de la base Q
-        Q = np.zeros((n, m), dtype=np.float64) if store_vectors else None
+        Q = np.zeros((n, m), dtype=np.float32) if store_vectors else None
 
         # ── Initialisation : q_1 = v0 / ‖v0‖ ─────────────────────────────────
-        q_prev = np.zeros(n, dtype=np.float64)              # q_0 = 0 (fictif)
-        q_curr = v0.astype(np.float64) / np.linalg.norm(v0) # q_1 normalisé
+        q_prev = np.zeros(n, dtype=np.float32)              # q_0 = 0 (fictif)
+        q_curr = v0.astype(np.float32) / np.linalg.norm(v0) # q_1 normalisé
 
         if store_vectors:
             Q[:, 0] = q_curr
 
         # ── Première application : z = H q_1 - α_1 q_1 ───────────────────────
-        z        = matvec(q_curr).astype(np.float64)
+        z        = matvec(q_curr).astype(np.float32)
         alpha[0] = float(np.dot(q_curr, z))   # α_1 = q_1^T H q_1
         z        = z - alpha[0] * q_curr      # résidu après projection
 
@@ -326,7 +327,7 @@ class LanczosAlgorithm:
             q_curr = q_next
 
             # ── Application de H et calcul de α_j ────────────────────────────
-            z        = matvec(q_curr).astype(np.float64)
+            z        = matvec(q_curr).astype(np.float32)
             alpha[j] = float(np.dot(q_curr, z))   # α_j = q_j^T H q_j
 
             # Résidu pour le prochain pas (récurrence à 3 termes complète)
@@ -504,7 +505,7 @@ class StochasticLanczosQuadrature:
         Les valeurs propres extrêmes de H convergent très vite dans le sous-espace
         de Krylov : après ~30 pas, λ_max est estimé à < 1 % d'erreur.
 
-        Note RAM : Q ∈ R^{n × m_lanczos}, float64.
+        Note RAM : Q ∈ R^{n × m_lanczos}, float32 (moitié RAM vs float64).
         Pour n=11M et m=30 : ~2.6 Go. Réduire m_lanczos si nécessaire.
 
         Retourne
@@ -695,7 +696,7 @@ class AnisotropicPerturbation:
             # ses composantes sur chaque vecteur spike via Gram-Schmidt.
             # → δθ vit entièrement dans le sous-espace bulk (λ ≈ 0).
             n_params = ritz_vecs.shape[0]
-            v = self._rng.standard_normal(n_params).astype(np.float64)
+            v = self._rng.standard_normal(n_params).astype(np.float32)
             # Projection orthogonale : v ← v - Σᵢ (v·qᵢ) qᵢ
             for i in range(k_eff):
                 qi = vecs[:, i]

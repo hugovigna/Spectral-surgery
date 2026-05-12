@@ -63,7 +63,7 @@ print("[3] Entraînement (max 40 epochs, early stopping) ...")
 
 callbacks = [
     tf.keras.callbacks.ModelCheckpoint(
-        filepath="resnet50_cifar100_best.keras",
+        filepath="resnet50_cifar100.keras",
         monitor="val_accuracy",
         save_best_only=True,
         verbose=1,

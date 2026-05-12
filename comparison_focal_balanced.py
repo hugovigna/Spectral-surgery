@@ -34,7 +34,7 @@ FT_EPOCHS   = 3
 FT_LR       = 1e-4
 FT_BATCH    = 64
 MODEL_PATH  = "resnet50_cifar10.keras"
-OUTPUT_DIR  = "results/comparison"
+OUTPUT_DIR  = "results/cifar10/comparison"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -208,8 +208,8 @@ print(f"    Eval : Global={res_cb_eval['acc_global']*100:.1f}%  std={res_cb_eval
 # ════════════════════════════════════════════════════════════════════════════
 
 # Charger les résultats Spectral Surgery depuis le run précédent
-ss_sens_csv = pd.read_csv("results/spike_optimizer/summary.csv")
-ss_eval_csv = pd.read_csv("results/spike_optimizer/eval_heldout.csv")
+ss_sens_csv = pd.read_csv("results/cifar10/ss/summary.csv")
+ss_eval_csv = pd.read_csv("results/cifar10/ss/eval_heldout.csv")
 
 print(f"\n{'='*100}")
 print("  TABLE 11 — Comparaison des méthodes de rééquilibrage")

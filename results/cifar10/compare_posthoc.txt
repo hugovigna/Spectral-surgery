@@ -1,0 +1,70 @@
+[1] Chargement CIFAR-10 ...
+    Held-out eval : 5000 images
+    Fréquences train : [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+
+[2] Chargement modèle ...
+    Dernière couche : dense  (Dense)
+    Couche Dense    : dense  shape W=(2048, 10)
+
+[3] Logits baseline ...
+
+  avion   auto  oisea   chat   cerf  chien  greno  cheva  batea  camio
+──────────────────────────────────────────────────────────────────────────────────────────
+  Baseline                        glob=84.94%  σ=8.57%  [ 89.2   90.7   81.7   68.6   85.2   69.0   90.6   90.5   93.1   89.5]
+
+[4] τ-normalization ...
+    Normes colonnes W (par classe) :
+      avion        : 2.4924
+      auto         : 2.3342
+      oiseau       : 2.5508
+      chat         : 2.4479
+      cerf         : 2.7388
+      chien        : 2.5014
+      grenouille   : 2.8455
+      cheval       : 2.6955
+      bateau       : 2.6923
+      camion       : 2.3439
+  τ-norm τ=0.25                   glob=85.02%  σ=8.53%  [ 89.4   90.9   82.1   69.2   85.2   68.6   90.6   90.3   93.1   89.5]  worst=-0.4pp  best=+0.6pp
+  τ-norm τ=0.5                    glob=85.00%  σ=8.43%  [ 89.2   91.1   82.1   69.6   85.0   68.6   90.6   90.1   92.9   89.5]  worst=-0.4pp  best=+1.0pp
+  τ-norm τ=0.75                   glob=84.98%  σ=8.33%  [ 89.2   91.3   82.1   70.4   85.0   68.2   90.0   89.9   92.9   89.5]  worst=-0.8pp  best=+1.8pp
+  τ-norm τ=1.0                    glob=84.98%  σ=8.17%  [ 89.6   91.5   81.9   71.0   84.3   68.4   90.0   89.9   92.1   89.7]  worst=-1.0pp  best=+2.4pp
+  τ-norm τ=1.25                   glob=85.02%  σ=8.03%  [ 89.8   91.5   81.9   71.2   84.3   68.8   89.6   89.9   91.9   89.9]  worst=-1.2pp  best=+2.6pp
+  τ-norm τ=1.5                    glob=84.92%  σ=7.99%  [ 90.2   91.5   81.9   72.2   83.7   68.0   89.4   89.7   91.2   90.1]  worst=-1.9pp  best=+3.6pp
+  τ-norm τ=2.0                    glob=84.68%  σ=7.90%  [ 90.6   91.7   81.3   74.8   82.9   66.3   88.6   89.1   89.4   90.7]  worst=-3.6pp  best=+6.2pp
+
+[5] Logit Adjustment ...
+    log(π_c) : [-2.3026, -2.3026, -2.3026, -2.3026, -2.3026, -2.3026, -2.3026, -2.3026, -2.3026, -2.3026]
+    Variation max log(π) : 0.000000
+    → CIFAR-10 est équilibré (π_c = 1/C ∀c) : l'ajustement est constant
+      sur toutes les classes et annulé par le softmax. Effet nul par construction.
+
+  Logit Adj. τ=0.5                glob=84.94%  σ=8.57%  [ 89.2   90.7   81.7   68.6   85.2   69.0   90.6   90.5   93.1   89.5]  worst=+0.0pp  best=+0.0pp
+  Logit Adj. τ=1.0                glob=84.94%  σ=8.57%  [ 89.2   90.7   81.7   68.6   85.2   69.0   90.6   90.5   93.1   89.5]  worst=+0.0pp  best=+0.0pp
+  Logit Adj. τ=2.0                glob=84.94%  σ=8.57%  [ 89.2   90.7   81.7   68.6   85.2   69.0   90.6   90.5   93.1   89.5]  worst=+0.0pp  best=+0.0pp
+
+==========================================================================================
+  RÉSUMÉ COMPARATIF (held-out 5000 images, seed=0)
+==========================================================================================
+  avion   auto  oisea   chat   cerf  chien  greno  cheva  batea  camio
+──────────────────────────────────────────────────────────────────────────────────────────
+  Baseline                        glob=84.94%  σ=8.57%  [ 89.2   90.7   81.7   68.6   85.2   69.0   90.6   90.5   93.1   89.5]
+  SS 10 iter γ-decay [CSV]        glob=84.68%  σ=5.52%  [ 85.9   92.4   83.2   76.1   81.7   74.9   89.2   84.0   90.0   88.4]  worst=-6.5pp  best=+7.5pp
+  τ-norm best (τ=2.0)             glob=84.68%  σ=7.90%  [ 90.6   91.7   81.3   74.8   82.9   66.3   88.6   89.1   89.4   90.7]  worst=-3.6pp  best=+6.2pp
+  Logit Adj. (tous τ)             → identique baseline (CIFAR-10 équilibré)
+==========================================================================================
+
+  Note : SS Adam 15 iter en cours (résultats à lire dans
+         results/spike_optimizer_adam/eval_heldout.csv quand terminé)
+
+  CSV → results/compare_posthoc/cifar10_posthoc.csv
+
+  Table LaTeX :
+  \begin{tabular}{lccc}
+  \toprule
+  Method & Global (\%) & $\sigma$ (\%) & Chat (\%) \\ \midrule
+  Baseline & 84.94 & 8.57 & 68.6 \\
+  $\tau$-norm ($\tau$=2.0) & 84.68 & 7.90 & 74.8 \\
+  Logit Adj. & \multicolumn{3}{c}{trivial (dataset équilibré)} \\
+  Spectral Surgery & 84.68 & 5.52 & 76.1 \\
+  \bottomrule
+  \end{tabular}

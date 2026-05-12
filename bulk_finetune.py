@@ -36,7 +36,7 @@ import time
 # ════════════════════════════════════════════════════════════════════════════
 CONFIG = {
     # ── Modèle et données ────────────────────────────────────────────────
-    "model_path"   : "resnet50_cifar10_spiked.keras",
+    "model_path"   : "resnet50_cifar10_ss.keras",
     "n_hvp_samples": 128,
     "seed"         : 0,
 
@@ -53,7 +53,7 @@ CONFIG = {
     "recompute_every": 1,      # recalcule les spikes à chaque epoch
 
     # ── Sortie ───────────────────────────────────────────────────────────
-    "output_dir"   : "results/bulk_finetune",
+    "output_dir"   : "results/cifar10/bulk_finetune",
 }
 
 CIFAR10_CLASSES = [
@@ -102,16 +102,13 @@ class BulkFineTuner:
     """
 
     def __init__(self, model, loss_fn, x_train, y_train,
-                 x_sens, y_sens, x_eval, y_eval,
-                 x_hvp, y_hvp, cfg):
+                 x_test, y_test, x_hvp, y_hvp, cfg):
         self.model   = model
         self.loss_fn = loss_fn
         self.x_train = x_train
         self.y_train = y_train
-        self.x_sens  = x_sens
-        self.y_sens  = y_sens
-        self.x_eval  = x_eval
-        self.y_eval  = y_eval
+        self.x_test  = x_test
+        self.y_test  = y_test
         self.x_hvp   = x_hvp
         self.y_hvp   = y_hvp
         self.cfg     = cfg
@@ -125,10 +122,10 @@ class BulkFineTuner:
         steps_per_epoch = n_train // bs
         log = []
 
-        # Baseline (sur set sensibilité)
-        acc_baseline = per_class_accuracy(self.model, self.x_sens, self.y_sens)
+        # Baseline
+        acc_baseline = per_class_accuracy(self.model, self.x_test, self.y_test)
         acc_global_0 = self.model.evaluate(
-            self.x_sens, self.y_sens, verbose=0, batch_size=256)[1]
+            self.x_test, self.y_test, verbose=0, batch_size=256)[1]
         print(f"\n  Baseline  global={acc_global_0:.4f}  "
               f"std={np.std(acc_baseline):.4f}")
         for c, name in enumerate(CIFAR10_CLASSES):
@@ -185,10 +182,10 @@ class BulkFineTuner:
                     print(f"    epoch {epoch}  step {step+1}/{steps_per_epoch}  "
                           f"loss={float(loss):.4f}")
 
-            # ── Évaluation fin d'epoch (sur set sensibilité) ──────────────
-            acc_new    = per_class_accuracy(self.model, self.x_sens, self.y_sens)
+            # ── Évaluation fin d'epoch ────────────────────────────────────
+            acc_new    = per_class_accuracy(self.model, self.x_test, self.y_test)
             acc_global = self.model.evaluate(
-                self.x_sens, self.y_sens, verbose=0, batch_size=256)[1]
+                self.x_test, self.y_test, verbose=0, batch_size=256)[1]
             cur_std    = float(np.std(acc_new))
             elapsed    = time.time() - t0
             avg_loss   = epoch_loss / steps_per_epoch
@@ -212,29 +209,14 @@ class BulkFineTuner:
                 **{CIFAR10_CLASSES[c]: float(acc_new[c]) for c in range(10)},
             })
 
-        # ── Évaluation finale held-out ───────────────────────────────────
+        # Sauvegarde
         import pandas as pd
-        acc_eval = per_class_accuracy(self.model, self.x_eval, self.y_eval)
-        acc_global_eval = self.model.evaluate(
-            self.x_eval, self.y_eval, verbose=0, batch_size=256)[1]
-        std_eval = float(np.std(acc_eval))
-        print(f"\n  === Évaluation held-out (5000 images, non contaminé) ===")
-        print(f"  Global={acc_global_eval*100:.1f}%  Std={std_eval*100:.2f}%")
-        for c, name in enumerate(CIFAR10_CLASSES):
-            print(f"    {name:12s} : {acc_eval[c]*100:.1f}%")
-
-        eval_summary = {
-            "acc_global_eval": float(acc_global_eval),
-            "std_eval": std_eval,
-            **{f"eval_{CIFAR10_CLASSES[c]}": float(acc_eval[c]) for c in range(10)},
-        }
-        pd.DataFrame([eval_summary]).to_csv(
-            os.path.join(cfg["output_dir"], "eval_heldout.csv"), index=False)
-
-        # Sauvegarde log
         pd.DataFrame(log).to_csv(
             os.path.join(cfg["output_dir"], "bulk_ft_log.csv"), index=False)
-        print(f"\n  CSV sauvegardé dans {cfg['output_dir']}/")
+        model_path = os.path.join(cfg["output_dir"], "model_bulk_ft.keras")
+        self.model.save(model_path)
+        print(f"\n  Modèle sauvegardé dans {model_path}")
+        print(f"  CSV sauvegardé dans {cfg['output_dir']}/")
         return log
 
 
@@ -259,13 +241,7 @@ if __name__ == "__main__":
     x_train = x_train.astype("float32") / 255.0
     x_test  = x_test.astype("float32")  / 255.0
 
-    # ── Split test set : 5000 sensibilité + 5000 évaluation held-out ──
-    rng = np.random.default_rng(CONFIG["seed"])
-    idx_test = rng.permutation(len(x_test))
-    x_sens, y_sens = x_test[idx_test[:5000]], y_test[idx_test[:5000]]
-    x_eval, y_eval = x_test[idx_test[5000:]], y_test[idx_test[5000:]]
-    print(f"    Test split : {len(x_sens)} sensibilité + {len(x_eval)} évaluation held-out")
-
+    rng     = np.random.default_rng(CONFIG["seed"])
     hvp_idx = rng.choice(len(x_train), CONFIG["n_hvp_samples"], replace=False)
     x_hvp   = x_train[hvp_idx]
     y_hvp   = y_train[hvp_idx]
@@ -279,8 +255,7 @@ if __name__ == "__main__":
     tuner = BulkFineTuner(
         model=model, loss_fn=loss_fn,
         x_train=x_train, y_train=y_train,
-        x_sens=x_sens, y_sens=y_sens,
-        x_eval=x_eval, y_eval=y_eval,
+        x_test=x_test, y_test=y_test,
         x_hvp=x_hvp, y_hvp=y_hvp,
         cfg=CONFIG,
     )

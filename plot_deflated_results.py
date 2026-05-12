@@ -10,7 +10,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-OUTPUT_DIR = "results/deflated_surgery_cifar100"
+OUTPUT_DIR = "results/cifar100/deflated_surgery"
 
 # ── Load all phase logs ────────────────────────────────────────────────
 phases_data = []

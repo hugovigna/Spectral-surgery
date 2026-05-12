@@ -13,17 +13,18 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
 # ── Chargement des données ──────────────────────────────────────────────────
-d = np.load("results/spectral_resnet50/spectral_data.npz")
+d = np.load("results/spectral/density_cifar10/spectral_data.npz")
 t_bulk       = d["t_bulk"]
 density_bulk = d["density_bulk"]
 t_full       = d["t_full"]
 density_full = d["density_full"]
 ritz_vals    = d["ritz_vals"]
 
-# Spikes = valeurs propres nettement au-dessus du bulk (λ > 5)
-spike_threshold = 5.0
-spikes = ritz_vals[ritz_vals > spike_threshold]
-print(f"Spikes détectés ({len(spikes)}) : {spikes.round(1).tolist()}")
+# Spikes = les C-1 = 9 plus grandes valeurs propres (théorie Papyan 2020)
+n_spikes = 9
+sorted_vals = np.sort(ritz_vals)[::-1]
+spikes = sorted_vals[:n_spikes]
+print(f"Spikes retenus ({len(spikes)}) : {spikes.round(1).tolist()}")
 
 # ── Figure ─────────────────────────────────────────────────────────────────
 fig, axes = plt.subplots(1, 2, figsize=(14, 5),
@@ -75,8 +76,8 @@ ax.legend(fontsize=8)
 
 plt.tight_layout()
 
-out_png = "results/spectral_resnet50/spectral_density.png"
-out_pdf = "results/spectral_resnet50/spectral_density.pdf"
+out_png = "results/spectral/density_cifar10/spectral_density.png"
+out_pdf = "results/spectral/density_cifar10/spectral_density.pdf"
 fig.savefig(out_png, dpi=200)
 fig.savefig(out_pdf)
 plt.close()

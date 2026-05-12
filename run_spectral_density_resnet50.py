@@ -69,9 +69,9 @@ elapsed = time.time() - t0
 print(f"    Temps total : {elapsed/60:.1f} min")
 
 # ── 6. Sauvegarde des données ─────────────────────────────────────────
-os.makedirs("results/spectral_resnet50", exist_ok=True)
+os.makedirs("results/spectral/density_cifar10", exist_ok=True)
 
-np.savez("results/spectral_resnet50/spectral_data.npz",
+np.savez("results/spectral/density_cifar10/spectral_data.npz",
          t_bulk=t_bulk, density_bulk=density_bulk,
          t_full=t_full, density_full=density_full,
          ritz_vals=ritz_vals)
@@ -109,10 +109,10 @@ ax.grid(alpha=0.3)
 ax.legend(fontsize=8)
 
 plt.tight_layout()
-fig.savefig("results/spectral_resnet50/spectral_density.png", dpi=200)
-fig.savefig("results/spectral_resnet50/spectral_density.pdf")
+fig.savefig("results/spectral/density_cifar10/spectral_density.png", dpi=200)
+fig.savefig("results/spectral/density_cifar10/spectral_density.pdf")
 plt.close()
-print(f"  Figure sauvegardée : results/spectral_resnet50/spectral_density.{{png,pdf}}")
+print(f"  Figure sauvegardée : results/spectral/density_cifar10/spectral_density.{{png,pdf}}")
 
 # ── 8. Stats ──────────────────────────────────────────────────────────
 # Bulk median
