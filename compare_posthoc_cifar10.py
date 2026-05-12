@@ -1,7 +1,7 @@
 """
 compare_posthoc_cifar10.py
 --------------------------
-Compare τ-normalization et logit adjustment à Spectral Surgery sur CIFAR-10.
+Compare τ-normalization et logit adjustment à Hessian Surgery sur CIFAR-10.
 
 Références :
   τ-norm      : Kang et al. "Decoupling Representation and Classifier
@@ -253,7 +253,7 @@ print(f"  $\\tau$-norm ($\\tau$={best_tau_norm['tau']}) "
       f"& {best_tau_norm['chat']*100:.1f} \\\\")
 print(f"  Logit Adj. & \\multicolumn{{3}}{{c}}{{trivial (dataset équilibré)}} \\\\")
 ss = SS_RESULTS["SS (10 iter, γ-decay)"]
-print(f"  Spectral Surgery & {ss['global']*100:.2f} & {ss['std']*100:.2f} "
+print(f"  Hessian Surgery & {ss['global']*100:.2f} & {ss['std']*100:.2f} "
       f"& {ss['per_class'][3]*100:.1f} \\\\")
 print("  \\bottomrule")
 print("  \\end{tabular}")

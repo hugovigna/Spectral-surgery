@@ -1,7 +1,7 @@
 """
 ablation_omega_cifar10.py
 --------------------------
-Ablation sur le mode omega (sqrt / linear / square) de Spectral Surgery
+Ablation sur le mode omega (sqrt / linear / square) de Hessian Surgery
 appliquée au baseline ResNet-50/CIFAR-10 (sans Focal Loss).
 
 Enchaîne 3 runs séquentiels sur le même jeu de données chargé une seule fois.
@@ -16,7 +16,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import numpy as np
 import tensorflow as tf
 
-from spectral_surgery import SpectralSurgery
+from hessian_surgery import HessianSurgery
 
 # ════════════════════════════════════════════════════════════════════════════
 # CONFIG de base — partagée entre les 3 runs, omega_mode surchargé à l'exécution
@@ -94,7 +94,7 @@ if __name__ == "__main__":
         print(f"    {cfg['model_path']}  —  "
               f"{sum(np.prod(v.shape) for v in model.trainable_variables):,} params")
 
-        runner = SpectralSurgery(
+        runner = HessianSurgery(
             model, loss_fn,
             x_sens, y_sens,   # sensitivity set
             x_eval, y_eval,   # val = held-out (monitoring + éval finale)

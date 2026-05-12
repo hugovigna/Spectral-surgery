@@ -294,10 +294,10 @@ if __name__ == "__main__":
     model.save(str(final_path))
     print(f"    {final_path}")
 
-    # Copie à la racine pour les scripts Spectral Surgery
+    # Copie à la racine pour les scripts Hessian Surgery
     root_path = pathlib.Path(f"{CONFIG['model_name']}.keras")
     model.save(str(root_path))
-    print(f"    {root_path}  (racine, pour Spectral Surgery)")
+    print(f"    {root_path}  (racine, pour Hessian Surgery)")
 
     summary = pd.DataFrame([{
         "val_loss"     : loss,

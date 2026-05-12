@@ -1,13 +1,13 @@
 """
 comparison_focal_balanced.py
 ------------------------------
-Comparaison de Spectral Surgery avec les baselines de rééquilibrage :
+Comparaison de Hessian Surgery avec les baselines de rééquilibrage :
 
   4 méthodes (Surgery seul déjà documenté séparément) :
     1. Focal Loss FT (γ=2, 3 epochs)
     2. Class-Balanced Loss FT (3 epochs)
-    3. Focal Loss FT → Spectral Surgery
-    4. Class-Balanced Loss FT → Spectral Surgery
+    3. Focal Loss FT → Hessian Surgery
+    4. Class-Balanced Loss FT → Hessian Surgery
 
 Usage :
     python3 comparison_focal_balanced.py
@@ -127,10 +127,10 @@ def finetune(model, loss_fn, x_train, y_train, x_val, y_val,
     print(f"  [{label}] Terminé en {elapsed:.0f}s")
     return elapsed
 
-def run_spectral_surgery(model, loss_fn, x_sens, y_sens, x_eval, y_eval,
+def run_hessian_surgery(model, loss_fn, x_sens, y_sens, x_eval, y_eval,
                          x_hvp, y_hvp, label=""):
-    """Lance Spectral Surgery et retourne (log, elapsed)."""
-    print(f"\n  [{label}] Spectral Surgery (10 itérations) ...")
+    """Lance Hessian Surgery et retourne (log, elapsed)."""
+    print(f"\n  [{label}] Hessian Surgery (10 itérations) ...")
     cfg = CONFIG.copy()
     cfg["output_dir"] = os.path.join(OUTPUT_DIR, label.replace(" ", "_"))
     cfg["save_model"] = False
@@ -207,7 +207,7 @@ print(f"    Eval : Global={res_cb_eval['acc_global']*100:.1f}%  std={res_cb_eval
 # Résumé final — Table 11 du papier
 # ════════════════════════════════════════════════════════════════════════════
 
-# Charger les résultats Spectral Surgery depuis le run précédent
+# Charger les résultats Hessian Surgery depuis le run précédent
 ss_sens_csv = pd.read_csv("results/cifar10/ss/summary.csv")
 ss_eval_csv = pd.read_csv("results/cifar10/ss/eval_heldout.csv")
 
@@ -227,11 +227,11 @@ for r in results:
     post_hoc = "Non"
     print(f"  {s['method']:<22s}  {s['acc_global']*100:>6.1f}%  "
           f"{s['std']*100:>6.2f}%  {d_s:>+7.2f}  {post_hoc:>9s}")
-# Spectral Surgery (depuis summary.csv)
+# Hessian Surgery (depuis summary.csv)
 ss_std_sens = float(ss_sens_csv["std_f"].iloc[0]) * 100
 ss_global_sens = float(ss_sens_csv["acc_global_f"].iloc[0]) * 100
 d_ss = ss_std_sens - baseline_sens['std'] * 100
-print(f"  {'Spectral Surgery':<22s}  {ss_global_sens:>6.1f}%  "
+print(f"  {'Hessian Surgery':<22s}  {ss_global_sens:>6.1f}%  "
       f"{ss_std_sens:>6.2f}%  {d_ss:>+7.2f}  {'Oui':>9s}")
 
 # ── Tableau TEST SET (held-out, 5000 images) ──
@@ -246,11 +246,11 @@ for r in results:
     post_hoc = "Non"
     print(f"  {e['method']:<22s}  {e['acc_global']*100:>6.1f}%  "
           f"{e['std']*100:>6.2f}%  {d_e:>+7.2f}  {post_hoc:>9s}")
-# Spectral Surgery (depuis eval_heldout.csv)
+# Hessian Surgery (depuis eval_heldout.csv)
 ss_std_eval = float(ss_eval_csv["std_eval"].iloc[0]) * 100
 ss_global_eval = float(ss_eval_csv["acc_global_eval"].iloc[0]) * 100
 d_ss_eval = ss_std_eval - baseline_eval['std'] * 100
-print(f"  {'Spectral Surgery':<22s}  {ss_global_eval:>6.1f}%  "
+print(f"  {'Hessian Surgery':<22s}  {ss_global_eval:>6.1f}%  "
       f"{ss_std_eval:>6.2f}%  {d_ss_eval:>+7.2f}  {'Oui':>9s}")
 
 print(f"\n{'='*100}")
@@ -265,7 +265,7 @@ for r in results:
                  "global_sens": r["sens"]["acc_global"], "std_sens": r["sens"]["std"],
                  "global_eval": r["eval"]["acc_global"], "std_eval": r["eval"]["std"],
                  "post_hoc": False})
-rows.append({"method": "Spectral Surgery",
+rows.append({"method": "Hessian Surgery",
              "global_sens": ss_global_sens/100, "std_sens": ss_std_sens/100,
              "global_eval": ss_global_eval/100, "std_eval": ss_std_eval/100,
              "post_hoc": True})

@@ -1,7 +1,7 @@
 """
 spike_optimizer_cifar100.py
 ----------------------------
-Spectral Surgery sur CIFAR-100 : même pipeline que spike_optimizer.py
+Hessian Surgery sur CIFAR-100 : même pipeline que spike_optimizer.py
 mais adapté pour 100 classes.
 
 Différences avec CIFAR-10 :
@@ -190,7 +190,7 @@ def optimize_alpha(S, acc_current, alpha_max):
 
 class SpikeOptimizerCIFAR100:
     """
-    Spectral Surgery pour CIFAR-100.
+    Hessian Surgery pour CIFAR-100.
     Même pipeline que CIFAR-10, adapté pour 100 classes.
     """
 
@@ -391,7 +391,7 @@ class SpikeOptimizerCIFAR100:
         iters = [r["iteration"] for r in log]
 
         fig, axes = plt.subplots(1, 3, figsize=(18, 5))
-        fig.suptitle("Spectral Surgery — CIFAR-100", fontsize=13)
+        fig.suptitle("Hessian Surgery — CIFAR-100", fontsize=13)
 
         # Panel 1 : distribution des accuracies (histogramme)
         ax = axes[0]

@@ -1,7 +1,7 @@
 """
 ss_cifar10_homogeneous.py
 -------------------------
-Spectral Surgery seul sur CIFAR-10 baseline (CE), omega_mode=homogeneous,
+Hessian Surgery seul sur CIFAR-10 baseline (CE), omega_mode=homogeneous,
 15 itérations. Objectif : tester si le mode uniforme produit un gain net
 d'accuracy globale (et pas seulement de redistribution).
 
@@ -15,7 +15,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import numpy as np
 import tensorflow as tf
 
-from spectral_surgery import SpectralSurgery
+from hessian_surgery import HessianSurgery
 
 CFG = {
     "model_path"        : "resnet50_cifar10.keras",
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     print(f"    {CFG['model_path']}  -  "
           f"{sum(np.prod(v.shape) for v in model.trainable_variables):,} params")
 
-    runner = SpectralSurgery(
+    runner = HessianSurgery(
         model, loss_fn,
         x_sens, y_sens,
         x_eval, y_eval,

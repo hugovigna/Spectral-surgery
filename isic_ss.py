@@ -1,10 +1,10 @@
 """
 isic_ss.py
 ----------
-Spectral Surgery — variante ISIC-2019 (8 classes dermoscopiques déséquilibrées).
+Hessian Surgery — variante ISIC-2019 (8 classes dermoscopiques déséquilibrées).
 
 Algorithme partagé entre les 3 expériences de l'article (CE, FL+SS, CB+SS).
-Diffère du `SpectralSurgery` canonique (CIFAR-10, cf. spectral_surgery.py) sur :
+Diffère du `HessianSurgery` canonique (CIFAR-10, cf. hessian_surgery.py) sur :
   - Pondération ω : proportionnelle à l'écart à la meilleure classe (au lieu
     de compute_omega paramétrique par omega_mode).
   - Contrainte de non-dégradation : seuil dur -3% pour classes faibles
@@ -138,7 +138,7 @@ def optimize_alpha(S, acc_current, acc_baseline, alpha_max, ritz_vals, n_iter,
 # ════════════════════════════════════════════════════════════════════════════
 
 class SpikeOptimizerISIC:
-    """Spectral Surgery pour ISIC-2019.
+    """Hessian Surgery pour ISIC-2019.
 
     cfg attendus (clés obligatoires) :
         model_path, model_out, output_dir, save_model,

@@ -1,7 +1,7 @@
 """
 deflated_surgery_cifar100.py
 -----------------------------
-Sequential Deflated Spectral Surgery pour CIFAR-100.
+Sequential Deflated Hessian Surgery pour CIFAR-100.
 
 Au lieu d'un seul Lanczos m=100 (impossible en RAM), on lance plusieurs phases
 qui ciblent chacune une tranche du spectre spike via déflation :
@@ -13,7 +13,7 @@ qui ciblent chacune une tranche du spectre spike via déflation :
 
 Chaque phase :
   - Calcule les eigenvectors via Lanczos sur l'oracle déflaté
-  - Lance T itérations de Spectral Surgery (early stop si σ stagne 2 itérations)
+  - Lance T itérations de Hessian Surgery (early stop si σ stagne 2 itérations)
   - Sauvegarde eigenvectors, modèle, log
 
 Usage :
@@ -204,7 +204,7 @@ def optimize_alpha(S, acc_current, acc_original, alpha_max):
 def run_phase(phase_cfg, model, loss_fn, x_sens_pool, y_sens_pool, x_hvp, y_hvp,
               Q_all_prev, acc_original, alpha_max, phase_dir):
     """
-    Lance une phase de Spectral Surgery.
+    Lance une phase de Hessian Surgery.
 
     Retourne : (Q_new, log, alpha_max_final)
     """
@@ -571,7 +571,7 @@ if __name__ == "__main__":
 
     # ── Plot récapitulatif ───────────────────────────────────────────────
     fig, axes = plt.subplots(1, 3, figsize=(18, 5))
-    fig.suptitle("Deflated Spectral Surgery — CIFAR-100", fontsize=13)
+    fig.suptitle("Deflated Hessian Surgery — CIFAR-100", fontsize=13)
 
     # Panel 1 : distribution des accuracies (set sensibilité)
     ax = axes[0]

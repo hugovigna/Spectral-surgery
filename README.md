@@ -1,4 +1,4 @@
-# Spectral Surgery: Class-Targeted Post-Hoc Rebalancing
+# Hessian Surgery: Class-Targeted Post-Hoc Rebalancing
 
 **Rééquilibrage post-hoc des performances par classe via la géométrie spectrale de la Hessienne.**
 
@@ -6,7 +6,7 @@
 
 ## Résumé
 
-Les réseaux entraînés par ERM présentent des disparités inter-classes importantes. **Spectral Surgery (SS)** exploite la structure des *spikes* de la Hessienne (un spike par classe, cf. Papyan 2020) pour redistribuer la performance entre classes **sans réentraînement** : on optimise des perturbations de poids dans le sous-espace spike, sous contrainte de maintien de l'accuracy globale.
+Les réseaux entraînés par ERM présentent des disparités inter-classes importantes. **Hessian Surgery (SS)** exploite la structure des *spikes* de la Hessienne (un spike par classe, cf. Papyan 2020) pour redistribuer la performance entre classes **sans réentraînement** : on optimise des perturbations de poids dans le sous-espace spike, sous contrainte de maintien de l'accuracy globale.
 
 ## Résultats principaux
 
@@ -16,7 +16,7 @@ Les réseaux entraînés par ERM présentent des disparités inter-classes impor
 | Baseline | 84.9% | 8.57% | – | 68.6 / 69.0 |
 | Focal Loss FT | 84.8% | 7.81% | −0.76 | 70.2 / 72.3 |
 | τ-norm (τ=2) | 84.7% | 7.90% | −0.67 | 74.8 / 66.3 |
-| **Spectral Surgery** | **85.1%** | **5.78%** | **−2.79** | **76.1 / 73.9** |
+| **Hessian Surgery** | **85.1%** | **5.78%** | **−2.79** | **76.1 / 73.9** |
 
 ### ISIC-2019 (ResNet-50, 8 classes, dermato déséquilibré)
 | Méthode | bal. acc | σ |
@@ -37,7 +37,7 @@ projet_recherche/
 ├── README.md
 │
 ├── spectral_tools.py                        # Lib bas niveau : HVP (Pearlmutter), Lanczos, SLQ
-├── spectral_surgery.py                      # Classe canonique `SpectralSurgery` (CIFAR-10, ablations)
+├── hessian_surgery.py                      # Classe canonique `HessianSurgery` (CIFAR-10, ablations)
 ├── isic_ss.py                               # Variante ISIC partagée (CE / FL / CB)
 ├── spike_optimizer.py                       # SS legacy CIFAR-10 (utilisée par comparison_focal_balanced, linearization_diagnostic)
 ├── spike_optimizer_cifar100.py              # SS spécialisée CIFAR-100 (utilisée par deflated_surgery)
@@ -117,7 +117,7 @@ python train_resnet50_cifar100.py  # ~60% acc
 python train_resnet50_isic2019.py  # baseline CE
 ```
 
-### Spectral Surgery
+### Hessian Surgery
 ```bash
 # CIFAR-10
 python ss_cifar10.py
@@ -153,11 +153,11 @@ python comparison_focal_balanced.py     # FL/CB (Table 11)
 
 ## Utilisation programmatique
 
-La classe `SpectralSurgery` (dans `spectral_surgery.py`) encapsule toute la procédure. Signature :
+La classe `HessianSurgery` (dans `hessian_surgery.py`) encapsule toute la procédure. Signature :
 
 ```python
 import tensorflow as tf
-from spectral_surgery import SpectralSurgery
+from hessian_surgery import HessianSurgery
 
 # 1. Modèle + loss
 model   = tf.keras.models.load_model("resnet50_cifar10.keras", compile=False)
@@ -190,7 +190,7 @@ cfg = {
     "class_names"      : [...],
 }
 
-runner = SpectralSurgery(
+runner = HessianSurgery(
     model, loss_fn,
     x_sens, y_sens,
     x_val,  y_val,
@@ -212,8 +212,8 @@ Scripts d'exemple complets : `ss_cifar10.py`, `spike_optimizer_isic2019_ce.py`, 
 | Hessian-Vector Product (Pearlmutter) | `spectral_tools.py` | Pearlmutter (1994) |
 | Lanczos avec ré-orthogonalisation | `spectral_tools.py` | Ghorbani et al. (2019) |
 | Stochastic Lanczos Quadrature (SLQ) | `spectral_tools.py` | Ghorbani et al. (2019) |
-| Spectral Surgery (CIFAR-10) | `spectral_surgery.py` | Ce papier (Algo. 2) |
-| Spectral Surgery (ISIC-2019) | `isic_ss.py` | Ce papier (Algo. 2, variante déséquilibrée) |
+| Hessian Surgery (CIFAR-10) | `hessian_surgery.py` | Ce papier (Algo. 2) |
+| Hessian Surgery (ISIC-2019) | `isic_ss.py` | Ce papier (Algo. 2, variante déséquilibrée) |
 | Deflated Surgery | `deflated_surgery_cifar100.py` | Ce papier (Algo. 3) |
 | Bulk-projected fine-tuning | `bulk_finetune.py` | Ce papier |
 

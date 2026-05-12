@@ -1,6 +1,6 @@
 """
 plot_deflated_results.py
-Generate summary PNGs for Deflated Spectral Surgery on CIFAR-100.
+Generate summary PNGs for Deflated Hessian Surgery on CIFAR-100.
 """
 
 import os
@@ -42,7 +42,7 @@ acc_final = np.array([last_row[c] for c in class_cols])
 # PNG 1: alpha_max evolution, perturbation budget, std, global accuracy
 # ════════════════════════════════════════════════════════════════════════
 fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-fig.suptitle("Deflated Spectral Surgery — CIFAR-100 (4 phases, $\\alpha_{max} \\propto 1/\\sqrt{\\lambda_{max}}$)",
+fig.suptitle("Deflated Hessian Surgery — CIFAR-100 (4 phases, $\\alpha_{max} \\propto 1/\\sqrt{\\lambda_{max}}$)",
              fontsize=14, fontweight="bold")
 
 all_df["global_iter"] = range(1, len(all_df) + 1)

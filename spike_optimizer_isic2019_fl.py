@@ -1,7 +1,7 @@
 """
 spike_optimizer_isic2019_fl.py
 ------------------------------
-Spectral Surgery sur checkpoint Focal Loss — ISIC-2019.
+Hessian Surgery sur checkpoint Focal Loss — ISIC-2019.
 Thin wrapper autour de isic_ss.SpikeOptimizerISIC.
 
 Usage : python spike_optimizer_isic2019_fl.py

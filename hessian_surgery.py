@@ -1,7 +1,7 @@
 """
-spectral_surgery.py
+hessian_surgery.py
 -------------------
-Runner Spectral Surgery configurable — générique pour tout modèle Keras.
+Runner Hessian Surgery configurable — générique pour tout modèle Keras.
 
 Hyperparamètres principaux :
   n_iter           : nombre max d'itérations
@@ -13,7 +13,7 @@ Hyperparamètres principaux :
                      "sqrt"        : ω_c ∝ √(1 - acc_c)    (priorité lissée)
 
 Usage :
-    python3.12 -u spectral_surgery.py 2>&1 | tee results/my_run/log.txt
+    python3.12 -u hessian_surgery.py 2>&1 | tee results/my_run/log.txt
 """
 
 import os
@@ -65,7 +65,7 @@ CONFIG = {
     "beta_ema"          : 0.7,    # EMA pour le suivi de std
 
     # ── Sauvegarde ────────────────────────────────────────────────────────
-    "output_dir"        : "results/isic2019/spectral_surgery",
+    "output_dir"        : "results/isic2019/hessian_surgery",
     "model_out"         : "resnet50_isic2019_ss.keras",
     "save_model"        : True,
     "seed"              : 0,
@@ -237,7 +237,7 @@ def optimize_alpha(S, acc_current, acc_baseline, alpha_max, ritz_vals,
 # Runner principal
 # ════════════════════════════════════════════════════════════════════════════
 
-class SpectralSurgery:
+class HessianSurgery:
     def __init__(self, model, loss_fn, x_sens, y_sens, x_val, y_val,
                  x_test, y_test, x_hvp, y_hvp, cfg):
         self.model   = model
@@ -268,7 +268,7 @@ class SpectralSurgery:
             save_model        = None,
         ):
         """
-        Lance la Spectral Surgery. Les kwargs surchargent CONFIG sans le modifier.
+        Lance la Hessian Surgery. Les kwargs surchargent CONFIG sans le modifier.
 
         Exemple Jupyter :
             runner.run(n_iter=15, omega_mode="sqrt", max_degrade_total=0.04,
@@ -484,7 +484,7 @@ class SpectralSurgery:
 
         fig, axes = plt.subplots(2, 3, figsize=(18, 9))
         fig.suptitle(
-            f"Spectral Surgery — omega={self.cfg['omega_mode']}  "
+            f"Hessian Surgery — omega={self.cfg['omega_mode']}  "
             f"degrade_max={self.cfg['max_degrade_total']*100:.0f}%",
             fontsize=13, fontweight="bold"
         )
@@ -598,8 +598,8 @@ if __name__ == "__main__":
     print(f"    {cfg['model_path']}  —  {sum(np.prod(v.shape) for v in model.trainable_variables):,} params")
 
     # ── Run ───────────────────────────────────────────────────────────────
-    print(f"\n[3] Spectral Surgery  (omega={cfg['omega_mode']}) ...")
-    runner = SpectralSurgery(
+    print(f"\n[3] Hessian Surgery  (omega={cfg['omega_mode']}) ...")
+    runner = HessianSurgery(
         model, loss_fn,
         x_sens, y_sens,
         x_val, y_val,

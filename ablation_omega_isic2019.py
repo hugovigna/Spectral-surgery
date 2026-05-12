@@ -1,7 +1,7 @@
 """
 ablation_omega_isic2019.py
 ---------------------------
-Ablation sur le mode omega (sqrt / linear / square) de Spectral Surgery
+Ablation sur le mode omega (sqrt / linear / square) de Hessian Surgery
 appliquée au baseline ResNet-50/ISIC-2019 (sans Focal Loss).
 
 10 itérations par run. Budget per-spike activé (défaut ISIC).
@@ -19,7 +19,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import numpy as np
 import tensorflow as tf
 
-from spectral_surgery import SpectralSurgery
+from hessian_surgery import HessianSurgery
 
 CLASSES    = ["MEL", "NV", "BCC", "AK", "BKL", "DF", "VASC", "SCC"]
 CACHE_DIR  = "data/isic2019_cache"
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         print(f"    {cfg['model_path']}  —  "
               f"{sum(np.prod(v.shape) for v in model.trainable_variables):,} params")
 
-        runner = SpectralSurgery(
+        runner = HessianSurgery(
             model, loss_fn,
             x_sens, y_sens,
             x_val,  y_val,

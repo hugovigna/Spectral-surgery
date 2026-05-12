@@ -1,7 +1,7 @@
 """
 spike_optimizer_isic2019_cb.py
 ------------------------------
-Spectral Surgery sur checkpoint Class-Balanced — ISIC-2019.
+Hessian Surgery sur checkpoint Class-Balanced — ISIC-2019.
 Thin wrapper autour de isic_ss.SpikeOptimizerISIC.
 
 Spécificités CB vs CE/FL :

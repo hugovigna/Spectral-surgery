@@ -3,7 +3,7 @@ class_balanced_isic2019.py
 --------------------------
 Fine-tuning de resnet50_isic2019.keras avec class weights inversement
 proportionnels à la fréquence de classe (cross-entropy rééquilibrée).
-Baseline de comparaison pour Spectral Surgery.
+Baseline de comparaison pour Hessian Surgery.
 
 Usage:
     python3.12 class_balanced_isic2019.py

@@ -2,7 +2,7 @@
 focal_loss_isic2019.py
 ----------------------
 Fine-tuning de resnet50_isic2019.keras avec Focal Loss (γ=2) sur ISIC 2019.
-Baseline de comparaison pour Spectral Surgery.
+Baseline de comparaison pour Hessian Surgery.
 
 Usage:
     python3.12 focal_loss_isic2019.py

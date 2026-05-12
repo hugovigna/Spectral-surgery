@@ -98,7 +98,7 @@ def main(test_min: int, test_frac: float, val_frac: float, seed: int):
         ci_half = 1.96 * 0.5 / np.sqrt(n) * 100
         print(f"  {name:6s}: {n:>4d} imgs  CI±≈{ci_half:.1f}%")
 
-    print("\nDone. Pour utiliser dans spectral_surgery.py :")
+    print("\nDone. Pour utiliser dans hessian_surgery.py :")
     print('  "cache_val"  : "data/isic2019_cache/val_v2.npz"')
     print('  "cache_test" : "data/isic2019_cache/test_v2.npz"')
     print('  # Le train_v2.npz remplace train.npz pour le sensitivity set')
